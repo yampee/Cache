@@ -17,26 +17,20 @@
 class Yampee_Cache_Manager
 {
 	/**
-	 * @var string
+	 * @var Yampee_Cache_Storage_Interface
 	 */
-	protected $cacheFile;
-
-	/**
-	 * @var string
-	 */
-	protected $cache;
+	protected $driver;
 
 	/**
 	 * Constructor
 	 *
-	 * @param string $cacheFile
+	 * @param Yampee_Cache_Storage_Interface $driver
 	 */
-	public function __construct($cacheFile)
+	public function __construct(Yampee_Cache_Storage_Interface $driver)
 	{
-		$this->cacheFile = (string) $cacheFile;
-		$this->cache = array();
+		$this->driver = $driver;
 
-		$this->open();
+		$this->driver->open();
 	}
 
 	/**
@@ -44,29 +38,7 @@ class Yampee_Cache_Manager
 	 */
 	public function __destruct()
 	{
-		$this->close();
-	}
-
-	/**
-	 * @return Yampee_Cache_Manager
-	 */
-	public function open()
-	{
-		if (file_exists($this->cacheFile)) {
-			$this->cache = unserialize(file_get_contents($this->cacheFile));
-		}
-
-		return $this;
-	}
-
-	/**
-	 * @return Yampee_Cache_Manager
-	 */
-	public function close()
-	{
-		file_put_contents($this->cacheFile, serialize($this->cache));
-
-		return $this;
+		$this->driver->close();
 	}
 
 	/**
@@ -76,11 +48,7 @@ class Yampee_Cache_Manager
 	 */
 	public function get($key, $default = null)
 	{
-		if (! $this->has($key)) {
-			return $default;
-		}
-
-		return $this->cache[$key]['value'];
+		return $this->driver->get($key, $default);
 	}
 
 	/**
@@ -89,16 +57,7 @@ class Yampee_Cache_Manager
 	 */
 	public function has($key)
 	{
-		if (isset($this->cache[$key])) {
-			if ($this->cache[$key]['expire'] != 0 && $this->cache[$key]['expire'] < time()) {
-				unset($this->cache[$key]);
-				return false;
-			} else {
-				return true;
-			}
-		}
-
-		return false;
+		return $this->driver->has($key);
 	}
 
 	/**
@@ -109,10 +68,7 @@ class Yampee_Cache_Manager
 	 */
 	public function set($key, $value, $expire = 0)
 	{
-		$this->cache[$key] = array(
-			'expire' => time() + $expire,
-			'value' => $value
-		);
+		$this->driver->set($key, $value, $expire);
 
 		return $this;
 	}
