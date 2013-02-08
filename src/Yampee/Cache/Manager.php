@@ -29,7 +29,6 @@ class Yampee_Cache_Manager
 	public function __construct(Yampee_Cache_Storage_Interface $driver)
 	{
 		$this->driver = $driver;
-
 		$this->driver->open();
 	}
 
