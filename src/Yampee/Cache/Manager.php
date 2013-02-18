@@ -17,57 +17,62 @@
 class Yampee_Cache_Manager
 {
 	/**
-	 * @var Yampee_Cache_Storage_Interface
+	 * @var string
 	 */
-	protected $driver;
+	protected $directory;
+
+	/**
+	 * @var array
+	 */
+	protected $openedFiles;
 
 	/**
 	 * Constructor
 	 *
-	 * @param Yampee_Cache_Storage_Interface $driver
+	 * @param string $directory
 	 */
-	public function __construct(Yampee_Cache_Storage_Interface $driver)
+	public function __construct($directory)
 	{
-		$this->driver = $driver;
-		$this->driver->open();
+		$this->directory = $directory;
 	}
 
 	/**
-	 * Destructor
+	 * @param $name
+	 * @return Yampee_Cache_File
 	 */
-	public function __destruct()
+	public function getFile($name)
 	{
-		$this->driver->close();
+		if (isset($this->openedFiles[$name])) {
+			return $this->openedFiles[$name];
+		}
+
+		if (! $this->hasFile($name)) {
+			file_put_contents($this->directory.'/'.$name, serialize(array()));
+		}
+
+		$this->openedFiles[$name] = new Yampee_Cache_File($this->directory.'/'.$name);
+
+		return $this->openedFiles[$name];
 	}
 
 	/**
-	 * @param string $key
-	 * @param mixed  $default
-	 * @return mixed
-	 */
-	public function get($key, $default = null)
-	{
-		return $this->driver->get($key, $default);
-	}
-
-	/**
-	 * @param string $key
+	 * @param string $name
 	 * @return bool
 	 */
-	public function has($key)
+	public function hasFile($name)
 	{
-		return $this->driver->has($key);
+		return file_exists($this->directory.'/'.$name);
 	}
 
 	/**
-	 * @param string $key
-	 * @param mixed  $value
-	 * @param int    $expire
+	 * @param $name
 	 * @return Yampee_Cache_Manager
 	 */
-	public function set($key, $value, $expire = 0)
+	public function deleteFile($name)
 	{
-		$this->driver->set($key, $value, $expire);
+		if ($this->hasFile($name)) {
+			unlink($this->directory.'/'.$name);
+		}
 
 		return $this;
 	}
